@@ -1,0 +1,26 @@
+Requirements:
+Python 3.7+
+torch (PyTorch)
+opencv-python (OpenCV)
+Pillow (PIL)
+requests
+numpy
+
+How to Use:
+Clone the repository:
+git clone https://github.com/pvshyamlal/Object-Detection-Yolo.git
+
+Install dependencies: 
+pip install -r requirements.txt
+
+
+Place the images you want to process in the input_images folder.
+
+Run the detection script:
+bash
+Copy below code
+python run_yolo.py --input_folder input_images --output_folder output_images
+
+The output images with detected objects will be saved in the output_images folder.
+
+Happy Detection :)
