@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YOLOv5 Object Detection</title>
+    <style>
+        /* Overall Styling */
+        body {
+            font-family: 'Arial', sans-serif;
+            margin: 0;
+            padding: 0;
+            background: linear-gradient(120deg, #007bff, #6a11cb);
+            color: #fff;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        /* Container Styling */
+        .container {
+            max-width: 600px;
+            width: 100%;
+            background: rgba(255, 255, 255, 0.1);
+            padding: 20px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.2);
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            margin-bottom: 20px;
+            color: #ffffff;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Image Styling */
+        .preview img,
+        .output img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .preview img:hover,
+        .output img:hover {
+            transform: scale(1.05);
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.5);
+        }
+
+        /* Loading Animation */
+        .loading-spinner {
+            display: none;
+            margin: 20px auto;
+            border: 5px solid rgba(255, 255, 255, 0.2);
+            border-top: 5px solid #ffffff;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+
+        /* Button Styling */
+        .btn {
+            background: linear-gradient(90deg, #6a11cb, #2575fc);
+            color: #fff;
+            border: none;
+            padding: 12px 25px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 25px;
+            text-transform: uppercase;
+            margin-top: 15px;
+            transition: background 0.3s, transform 0.2s;
+        }
+
+        .btn:hover {
+            background: linear-gradient(90deg, #2575fc, #6a11cb);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        /* File Input Styling */
+        #file-input {
+            margin: 15px 0;
+            padding: 10px;
+            background-color: #ffffff;
+            border: none;
+            border-radius: 20px;
+            font-size: 14px;
+            outline: none;
+            width: 100%;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        #file-input:hover {
+            cursor: pointer;
+        }
+
+        /* Section Titles */
+        h3 {
+            margin-bottom: 10px;
+            font-size: 1.2rem;
+            color: #f0f0f0;
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Responsive Design */
+        @media (max-width: 600px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .btn {
+                font-size: 14px;
+                padding: 10px 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>YOLOv5 Object Detection</h1>
+        <form id="upload-form">
+            <div class="preview">
+                <h3>Image Preview</h3>
+                <img id="preview-image" src="">
+            </div>
+            <input type="file" id="file-input" accept="image/*">
+            <button type="button" class="btn" id="detect-button">Run Detection</button>
+        </form>
+        <div class="output">
+            <h3>Detected Output</h3>
+            <div class="loading-spinner" id="loading-spinner"></div>
+            <img id="output-image" src="">
+        </div>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const previewImage = document.getElementById('preview-image');
+        const detectButton = document.getElementById('detect-button');
+        const outputImage = document.getElementById('output-image');
+        const loadingSpinner = document.getElementById('loading-spinner');
+
+        fileInput.addEventListener('change', () => {
+            const file = fileInput.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = (e) => {
+                    previewImage.src = e.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+        });
+
+        detectButton.addEventListener('click', async () => {
+            const formData = new FormData();
+            const file = fileInput.files[0];
+            if (!file) {
+                alert("Please select an image.");
+                return;
+            }
+            formData.append('image', file);
+
+            // Show loading spinner and hide output image
+            loadingSpinner.style.display = 'block';
+            outputImage.style.display = 'none';
+
+            const response = await fetch('/upload', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                const imagePath = await response.text();
+                outputImage.src = '/static/' + imagePath;
+
+                // Hide loading spinner and show output image
+                loadingSpinner.style.display = 'none';
+                outputImage.style.display = 'block';
+
+                // Scroll to the bottom of the page after the detected image shows
+                setTimeout(() => {
+                    window.scrollTo({
+                        top: document.body.scrollHeight,
+                        behavior: 'smooth'
+                    });
+                }, 500); // Added delay to ensure image is loaded before scrolling
+            } else {
+                alert("Detection failed.");
+                loadingSpinner.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
